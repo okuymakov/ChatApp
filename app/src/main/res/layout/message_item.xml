@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.kuymakov.chat.views.MessageView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:maxWidth="230dp"
+    app:messagePadding="@dimen/small_100"
+    app:messageMargin="@dimen/small_100"
+    tools:isFromMe="true"
+    tools:messageDate="14:00"
+    tools:messageText="Helloooo,vdvfvddfdddddddddddfdgfgdgdfggdggdfgdgfdgdddddddddddddd" />

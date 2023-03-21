@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="ThemeOverlay.Chat.Toolbar" parent="ThemeOverlay.MaterialComponents.Toolbar.Primary">
+        <item name="backgroundColor">?attr/colorPrimary</item>
+        <item name="colorOnPrimary">@color/black</item>
+    </style>
+
+    <style name="roundedImageViewRounded">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ChatBottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/ChatBottomSheetStyle</item>
+    </style>
+
+    <style name="ChatBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/bottom_sheet_bg</item>
+    </style>
+
+    <style name="success_appearance" parent="@android:style/TextAppearance">
+        <item name="android:textColor">@color/green_500</item>
+    </style>
+
+
+</resources>

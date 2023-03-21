@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="RecyclerStateLayout">
+        <attr name="errorText" format="string" />
+        <attr name="errorIcon" format="reference" />
+        <attr name="emptyText" format="string" />
+        <attr name="emptyIcon" format="reference" />
+        <attr name="loadingLayout" format="reference" />
+        <attr name="progressBarEnabled" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="MessageView">
+        <attr name="messageText" format="string" />
+        <attr name="messageTextSize" format="dimension" />
+        <attr name="messageDate" format="string" />
+        <attr name="isFromMe" format="boolean" />
+        <attr name="avatar" format="reference" />
+        <attr name="status" format="enum">
+            <enum name="SUCCESS" value="0"/>
+            <enum name="LOADING" value="1"/>
+            <enum name="ERROR" value="2"/>
+        </attr>
+        <attr name="messagePadding" format="dimension" />
+        <attr name="messageMargin" format="dimension" />
+        <attr name="maxWidth" format="dimension" />
+    </declare-styleable>
+</resources>

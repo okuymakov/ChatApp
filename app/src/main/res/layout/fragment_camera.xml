@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageButton
+        android:id="@+id/takePhoto_button"
+        android:layout_width="90dp"
+        android:layout_height="90dp"
+        android:background="@android:color/transparent"
+        android:elevation="10dp"
+        android:padding="@dimen/normal_100"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_take_photo_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:tint="@color/white" />
+
+    <ImageButton
+        android:id="@+id/flipCamera_button"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|end"
+        android:background="@android:color/transparent"
+        android:elevation="10dp"
+        android:padding="@dimen/normal_100"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_flip_camera_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/takePhoto_button"
+        app:layout_constraintTop_toTopOf="@+id/takePhoto_button"
+        app:tint="@color/white" />
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/camera_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.camera.CameraFragment"
+        tools:layout_editor_absoluteX="57dp"
+        tools:layout_editor_absoluteY="47dp">
+
+    </androidx.camera.view.PreviewView>
+</androidx.constraintlayout.widget.ConstraintLayout>

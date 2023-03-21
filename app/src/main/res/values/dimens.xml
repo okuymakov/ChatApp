@@ -1,0 +1,10 @@
+<resources>
+    <dimen name="small_100">8dp</dimen>
+    <dimen name="normal_100">16dp</dimen>
+    <dimen name="normal_125">20dp</dimen>
+    <dimen name="large_100">32dp</dimen>
+
+    <dimen name="ts_small_100">10sp</dimen>
+    <dimen name="ts_normal_100">14sp</dimen>
+    <dimen name="ts_large_100">20sp</dimen>
+</resources>
