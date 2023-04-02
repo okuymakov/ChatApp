@@ -57,7 +57,9 @@ class HomeStore @AssistedInject constructor(
                 if (res is Success) publish(Event.Navigation(HomeFragmentDirections.actionChatFragmentToLoginFragment()))
             }
             is Action.UpdateProfilePhoto -> execute {
-                val curUser = state.user ?: return@execute
+                val curUser = state.user
+                    ?: getCurrentUser().let { if (it is Success) it.data else null }
+                    ?: return@execute
                 val res = userRepo.updateUser(
                     UserRequest(
                         id = curUser.id,

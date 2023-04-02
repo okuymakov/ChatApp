@@ -2,23 +2,19 @@ package com.kuymakov.chat.ui.home
 
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import androidx.core.net.toUri
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.*
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import com.kuymakov.chat.R
-import com.kuymakov.chat.base.extensions.doOnApplyWindowInsets
-import com.kuymakov.chat.base.extensions.load
-import com.kuymakov.chat.base.extensions.toByteArray
+import com.kuymakov.chat.base.extensions.*
 import com.kuymakov.chat.base.mvi.BaseMviView
 import com.kuymakov.chat.base.ui.avatar.AvatarGenerator
 import com.kuymakov.chat.base.ui.viewBinding
-import com.kuymakov.chat.databinding.FragmentHomeBinding
+import com.kuymakov.chat.databinding.FragmentNavDrawerBinding
 import com.kuymakov.chat.databinding.NavHeaderBinding
 import com.kuymakov.chat.domain.models.Chat
 import com.kuymakov.chat.domain.models.User
@@ -29,67 +25,32 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class HomeFragment :
-    BaseMviView<HomeStore.State, HomeStore.Action, HomeStore.Event>(R.layout.fragment_home) {
-    private val binding by viewBinding(FragmentHomeBinding::bind)
+    BaseMviView<HomeStore.State, HomeStore.Action, HomeStore.Event>(R.layout.fragment_nav_drawer) {
+    private val binding by viewBinding(FragmentNavDrawerBinding::bind)
     private val viewModel: HomeViewModel by viewModels()
     private val navController: NavController by lazy { findNavController() }
     private var adapter: ChatsAdapter? = null
     private var navHeader: NavHeaderBinding? = null
 
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-    }
-
-    private fun setupInsets() {
-        binding.appbarLayout.doOnApplyWindowInsets {
-            addSystemTopPadding()
-        }
-        navHeader?.root?.doOnApplyWindowInsets {
-            addSystemTopPadding()
-        }
-        binding.drawerLayout.doOnApplyWindowInsets {
-            addSystemBottomPadding()
-        }
-    }
-
-
     override fun init() {
         bind(viewModel)
         viewModel.bind(this)
         navHeader = NavHeaderBinding.bind(binding.navView.getHeaderView(0))
-        requireActivity().window.apply {
-            WindowInsetsControllerCompat(this, binding.root).apply {
-                statusBarColor = Color.TRANSPARENT
-            }
-        }
         setupInsets()
         setupToolbar()
         setupNavView()
         setupList()
         dispatch(HomeStore.Action.GetCurrentUser)
         dispatch(HomeStore.Action.GetChats)
+        setupFragmentResultListener()
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onResume() {
+        super.onResume()
+        statusBarColor = Color.TRANSPARENT
         requireActivity().window.apply {
             WindowInsetsControllerCompat(this, binding.root).apply {
-                statusBarColor = context.getColor(R.color.blue)
-            }
-        }
-    }
-
-    fun updateProfilePhoto() {
-        setFragmentResultListener("requestKey") { key, bundle ->
-            val uri = bundle.getString("photoUri")?.toUri() ?: return@setFragmentResultListener
-            val parcelFileDescriptor: ParcelFileDescriptor? =
-                requireActivity().contentResolver.openFileDescriptor(uri, "r")
-            parcelFileDescriptor?.use {
-                val fd = it.fileDescriptor
-                val bitmap = BitmapFactory.decodeFileDescriptor(fd).toByteArray()
-                dispatch(HomeStore.Action.UpdateProfilePhoto(bitmap))
+                isAppearanceLightStatusBars = false
             }
         }
     }
@@ -98,17 +59,17 @@ class HomeFragment :
         val chats = state.chats
         when {
             state.isLoading -> {
-                binding.chatsListState.updateState(RecyclerStateLayout.State.Loading)
+                binding.content.chatsListState.updateState(RecyclerStateLayout.State.Loading)
             }
             state.hasError -> {
-                binding.chatsListState.updateState(RecyclerStateLayout.State.Error)
+                binding.content.chatsListState.updateState(RecyclerStateLayout.State.Error)
             }
             state.hasNoInternet -> {}
             chats?.isEmpty() ?: false -> {
-                binding.chatsListState.updateState(RecyclerStateLayout.State.Empty)
+                binding.content.chatsListState.updateState(RecyclerStateLayout.State.Empty)
             }
             chats?.isNotEmpty() ?: false -> {
-                binding.chatsListState.updateState(RecyclerStateLayout.State.Success)
+                binding.content.chatsListState.updateState(RecyclerStateLayout.State.Success)
                 adapter?.submitList(chats)
             }
         }
@@ -137,13 +98,32 @@ class HomeFragment :
         dispatch(HomeStore.Action.ChatItemClick(chat))
     }
 
+    private fun setupInsets() {
+        binding.content.appbarLayout.doOnApplyWindowInsets {
+            addSystemTopPadding()
+        }
+        navHeader!!.root.doOnApplyWindowInsets {
+            addSystemTopPadding()
+        }
+
+        binding.navView.doOnApplyWindowInsets {
+            add { insets, paddings, _ ->
+                navHeader!!.root.addSystemTopPadding(insets, paddings)
+            }
+        }
+        binding.drawerLayout.doOnApplyWindowInsets {
+            addSystemBottomPadding()
+        }
+    }
+
+
     private fun setupList() {
         adapter = ChatsAdapter(::onClick)
-        binding.chatsList.adapter = adapter
+        binding.content.chatsList.adapter = adapter
     }
 
     private fun setupToolbar() {
-        with(binding.toolbar) {
+        with(binding.content.toolbar) {
             showOverflowMenu()
             setNavigationOnClickListener {
                 dispatch(HomeStore.Action.NavigationIconClick)
@@ -185,6 +165,19 @@ class HomeFragment :
             email.text = user.email
             avatar.load(user.imageUrl) {
                 placeholder(AvatarGenerator(requireContext()).generate(user.username))
+            }
+        }
+    }
+
+    private fun setupFragmentResultListener() {
+        setFragmentResultListener("updateProfilePhoto") { _, bundle ->
+            val uri = bundle.getString("photoUri")?.toUri() ?: return@setFragmentResultListener
+            val parcelFileDescriptor: ParcelFileDescriptor? =
+                requireActivity().contentResolver.openFileDescriptor(uri, "r")
+            parcelFileDescriptor?.use {
+                val fd = it.fileDescriptor
+                val bitmap = BitmapFactory.decodeFileDescriptor(fd).toByteArray()
+                dispatch(HomeStore.Action.UpdateProfilePhoto(bitmap))
             }
         }
     }
