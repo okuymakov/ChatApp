@@ -2,9 +2,10 @@ package com.kuymakov.chat.ui.activity
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.kuymakov.chat.R
+import com.kuymakov.chat.base.extensions.color
 import com.kuymakov.chat.data.UserPresenceHandler
 import com.kuymakov.chat.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,14 +22,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        userPresenceHandler.init()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, binding.root).apply {
             isAppearanceLightNavigationBars = true
         }
         window.apply {
-            statusBarColor = ContextCompat.getColor(context, R.color.blue)
-            navigationBarColor = ContextCompat.getColor(context, R.color.white_50)
+            statusBarColor = context.color(R.color.blue)
+            navigationBarColor = context.color(R.color.white_50)
         }
+        userPresenceHandler.init()
     }
 
 }
