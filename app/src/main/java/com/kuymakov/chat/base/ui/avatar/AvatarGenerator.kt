@@ -2,16 +2,16 @@ package com.kuymakov.chat.base.ui.avatar
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
 import com.kuymakov.chat.R
+import com.kuymakov.chat.base.extensions.color
 
 class AvatarGenerator(context: Context) {
     private val colors = arrayOf(
-        ContextCompat.getColor(context, R.color.avatar_gray),
-        ContextCompat.getColor(context, R.color.avatar_blue),
-        ContextCompat.getColor(context, R.color.avatar_yellow),
-        ContextCompat.getColor(context, R.color.avatar_green),
-        ContextCompat.getColor(context, R.color.avatar_red),
+        context.color(R.color.avatar_gray),
+        context.color(R.color.avatar_blue),
+        context.color(R.color.avatar_yellow),
+        context.color(R.color.avatar_green),
+        context.color(R.color.avatar_red),
     )
 
     fun generate(name: String): Drawable {
