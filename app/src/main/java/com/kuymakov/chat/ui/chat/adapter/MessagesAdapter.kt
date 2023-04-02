@@ -2,7 +2,7 @@ package com.kuymakov.chat.ui.chat.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.kuymakov.chat.base.recyclerview.BaseDiffUtilItemCallback
 import com.kuymakov.chat.databinding.MessageDateBinding
@@ -14,11 +14,11 @@ import com.kuymakov.chat.domain.models.MessagesGroupDate
 class MessagesAdapter(
     private val onClick: (Message) -> Unit,
     private val onLongClick: (Message) -> Unit
-) : PagingDataAdapter<MessageItem, RecyclerView.ViewHolder>(diffCallback = BaseDiffUtilItemCallback()) {
+) : ListAdapter<MessageItem, RecyclerView.ViewHolder>(BaseDiffUtilItemCallback<MessageItem,String>()) {
 
 
-    fun selected(): List<MessageItem> {
-        return snapshot().items.filterIsInstance(Message::class.java).filter { it.isSelected }
+    val selected: List<String> get() {
+        return currentList.filterIsInstance(Message::class.java).filter { it.isSelected }.map { it.id }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {

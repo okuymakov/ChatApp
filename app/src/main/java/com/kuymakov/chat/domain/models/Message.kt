@@ -3,7 +3,6 @@ package com.kuymakov.chat.domain.models
 import com.kuymakov.chat.base.recyclerview.Item
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
 
 sealed interface MessageItem : Item<String>
 
@@ -22,8 +21,8 @@ data class Message(
 }
 
 data class MessagesGroupDate(
-    override val id: String = UUID.randomUUID().toString(),
-    val date: LocalDate
+    val date: LocalDate,
+    override val id: String = date.toString()
 ) : MessageItem
 
 

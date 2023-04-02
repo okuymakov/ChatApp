@@ -19,6 +19,16 @@ fun MessageRequest.toMap(): HashMap<String, Any?> {
     )
 }
 
+
+fun List<Message>.toMessageItems(): List<MessageItem> {
+    val messageItems = mutableListOf<MessageItem>()
+    groupBy { msg -> msg.date.toLocalDate() }.forEach { (date, messages) ->
+        messageItems.addAll(messages)
+        messageItems.add(MessagesGroupDate(date = date))
+    }
+    return messageItems
+}
+
 suspend fun DocumentSnapshot.toMessage(): Message {
     val curUserId = UserPresenceHandler.currentUser?.uid ?: error("unauthorized")
     val from = getRefAsObject<User>("from")

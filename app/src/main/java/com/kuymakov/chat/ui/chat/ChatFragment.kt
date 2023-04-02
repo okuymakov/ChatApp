@@ -1,21 +1,22 @@
 package com.kuymakov.chat.ui.chat
 
-import android.os.Bundle
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.view.WindowCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.paging.LoadState
-import androidx.paging.PagingData
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.badge.BadgeDrawable
+import com.google.android.material.badge.BadgeUtils
+import com.google.android.material.badge.ExperimentalBadgeUtils
 import com.kuymakov.chat.R
-import com.kuymakov.chat.base.extensions.*
+import com.kuymakov.chat.base.extensions.doOnApplyWindowInsets
+import com.kuymakov.chat.base.extensions.drawable
+import com.kuymakov.chat.base.extensions.lastSeen
+import com.kuymakov.chat.base.extensions.load
 import com.kuymakov.chat.base.mvi.BaseMviView
 import com.kuymakov.chat.base.ui.avatar.AvatarGenerator
 import com.kuymakov.chat.base.ui.viewBinding
@@ -44,18 +45,11 @@ class ChatFragment :
     private var isActionMode = false
     private var actionMode: ActionMode? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-    }
-
-
     override fun init() {
         bind(viewModel)
         viewModel.bind(this)
         binding.scrollDownFab.hide()
         dispatch(ChatStore.Action.GetMessages(args.chat.id))
-        //dispatch(ChatStore.Action.ListenMessagesUpdates(args.chat.id))
         setupInsets()
         setupToolbar()
         setupToolbarContent()
@@ -80,25 +74,21 @@ class ChatFragment :
             }
             state.hasNoInternet -> {}
             else -> {
-                adapter.submitData(lifecycle, state.messages)
+                binding.messagesListState.updateState(RecyclerStateLayout.State.Success)
+                adapter.submitList(state.messages) {
+                    if (isActionMode) {
+                        updateCounter(state.messages.filter { it is Message && it.isSelected }.size)
+                    }
+                }
             }
         }
-        val drawable = AppCompatResources.getDrawable(
-            requireContext(),
-            state.sendButtonResId
-        )
-        binding.sendMessageButton.setImageDrawable(drawable)
+        binding.sendMessageButton.setImageDrawable(requireContext().drawable(state.sendButtonResId))
 
     }
 
     private fun onClick(msg: Message) {
         if (isActionMode) {
-            launchOnLifecycle(state = Lifecycle.State.STARTED) {
-                val newData =
-                    adapter.snapshot().items.replace(msg, msg.copy(isSelected = !msg.isSelected))
-                adapter.submitData(PagingData.from(newData))
-                updateCounter()
-            }
+            dispatch(ChatStore.Action.SelectMessages(listOf(msg.id)))
         }
     }
 
@@ -106,17 +96,11 @@ class ChatFragment :
         if (!isActionMode) {
             actionMode = binding.toolbar.startActionMode(actionModeCallback)
         }
-        launchOnLifecycle(state = Lifecycle.State.STARTED) {
-            val newData =
-                adapter.snapshot().items.replace(msg, msg.copy(isSelected = !msg.isSelected))
-            adapter.submitData(PagingData.from(newData))
-            updateCounter()
-        }
+        dispatch(ChatStore.Action.SelectMessages(listOf(msg.id)))
     }
 
-    private fun updateCounter() {
+    private fun updateCounter(count: Int) {
         actionMode?.let {
-            val count = adapter.selected().size
             if (count > 0) {
                 it.title = count.toString()
             } else it.finish()
@@ -137,11 +121,7 @@ class ChatFragment :
 
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?) = when (item?.itemId) {
             R.id.delete -> {
-                dispatch(
-                    ChatStore.Action.DeleteMessages(
-                        args.chat.id,
-                        adapter.selected().map { it.id })
-                )
+                dispatch(ChatStore.Action.DeleteMessages(args.chat.id, adapter.selected))
                 actionMode?.finish()
                 true
             }
@@ -149,11 +129,7 @@ class ChatFragment :
         }
 
         override fun onDestroyActionMode(mode: ActionMode?) {
-            val selected = adapter.selected()
-            val newData = adapter.snapshot().items.map {
-                if (selected.contains(it)) (it as Message).copy(isSelected = false) else it
-            }
-            adapter.submitData(lifecycle, PagingData.from(newData))
+            dispatch(ChatStore.Action.SelectMessages(adapter.selected))
             isActionMode = false
         }
 
@@ -172,29 +148,29 @@ class ChatFragment :
             addSystemBottomPadding()
             fitIme()
         }
-        binding.messagesList.doOnApplyWindowInsets {
-            //addSystemBottomPadding()
-        }
     }
 
     private fun setupChatInput() {
         with(binding) {
             messageInput.requestFocus()
             messageInput.addTextChangedListener {
-                //dispatch(ChatStore.Action.ChangeMessageInputType)
+                if(messageInput.text.isBlank()) {
+                    dispatch(ChatStore.Action.ChangeMessageInput(true))
+                } else  dispatch(ChatStore.Action.ChangeMessageInput(false))
             }
 
             sendMessageButton.setOnClickListener {
-                val message = MessageRequest(
-                    id = UUID.randomUUID().toString(),
-                    chatId = args.chat.id,
-                    text = messageInput.text.toString()
-                )
-                messageInput.text.clear()
-                dispatch(ChatStore.Action.CreateMessage(message))
+                if(messageInput.text.isNotBlank()) {
+                    val message = MessageRequest(
+                        id = UUID.randomUUID().toString(),
+                        chatId = args.chat.id,
+                        text = messageInput.text.toString()
+                    )
+                    messageInput.text.clear()
+                    dispatch(ChatStore.Action.CreateMessage(message))
+                }
             }
         }
-
     }
 
     private fun setupToolbar() {
@@ -247,19 +223,23 @@ class ChatFragment :
 
         })
 
-        adapter.addLoadStateListener { loadState ->
-            if (loadState.refresh is LoadState.NotLoading) {
-                if (adapter.itemCount < 1) {
-                    binding.messagesListState.updateState(RecyclerStateLayout.State.Empty)
-                } else {
-                    binding.messagesListState.updateState(RecyclerStateLayout.State.Success)
-                }
-            }
-        }
-        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+        adapter.registerAdapterDataObserver(@ExperimentalBadgeUtils object : RecyclerView.AdapterDataObserver() {
+            var count = adapter.itemCount
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                if (positionStart == 0) {
+                val isFromMe = (adapter.currentList[positionStart] as Message).isFromMe
+                val pos =
+                    (binding.messagesList.layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+                if (isFromMe || pos == positionStart) {
                     binding.messagesList.scrollToPosition(0)
+                    val badge = BadgeDrawable.create(requireActivity())
+                    badge.number = itemCount - count
+                    BadgeUtils.attachBadgeDrawable(badge,binding.scrollDownFab)
+                    count = itemCount
+                } else {
+                    val badge = BadgeDrawable.create(requireActivity())
+                    badge.number = itemCount - count
+                    BadgeUtils.attachBadgeDrawable(badge,binding.scrollDownFab)
+                    count = itemCount
                 }
             }
         })
