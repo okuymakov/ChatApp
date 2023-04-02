@@ -3,6 +3,7 @@ package com.kuymakov.chat.ui.home
 import android.Manifest
 import android.app.Dialog
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -49,16 +50,19 @@ class PhotoSourceChooser : DialogFragment() {
     }
 
     private fun requestStoragePermissions() {
+        val permission =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES
+            else Manifest.permission.READ_EXTERNAL_STORAGE
         when (PackageManager.PERMISSION_GRANTED) {
             ContextCompat.checkSelfPermission(
                 requireContext(),
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                permission
             ) -> {
                 navigateToPhotoPicker()
             }
             else -> {
                 requestStoragePermissionLauncher.launch(
-                    Manifest.permission.READ_EXTERNAL_STORAGE
+                    permission
                 )
             }
         }
