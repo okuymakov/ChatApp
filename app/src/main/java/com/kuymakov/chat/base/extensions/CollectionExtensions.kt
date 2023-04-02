@@ -11,17 +11,11 @@ inline fun <T> List<T>.firstOrAny(predicate: (T) -> Boolean): T {
 
 
 suspend fun <T, R> Iterable<T>.mapAsyncAndAwait(transform: suspend (T) -> R): List<R> =
-    coroutineScope {
-        mapAsync(transform).awaitAll()
-    }
+    mapAsync(transform).awaitAll()
+
 
 suspend fun <T, R> Iterable<T>.mapAsync(transform: suspend (T) -> R): List<Deferred<R>> =
     coroutineScope {
         map { async { transform(it) } }
     }
 
-fun <T> Iterable<T>.replace(oldValue: T, newValue: T): List<T> {
-    return map {
-        if (it == oldValue) newValue else it
-    }
-}

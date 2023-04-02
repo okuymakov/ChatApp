@@ -8,7 +8,6 @@ import androidx.core.view.*
 fun View.addSystemTopPadding(
     insets: WindowInsetsCompat,
     paddings: Rect,
-    margins: Rect,
 ): WindowInsetsCompat {
     val initialPaddingTop = paddings.top
     val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
@@ -16,21 +15,9 @@ fun View.addSystemTopPadding(
     return insets
 }
 
-fun View.addSystemTopMargin(
-    insets: WindowInsetsCompat,
-    paddings: Rect,
-    margins: Rect,
-): WindowInsetsCompat {
-    val initialMarginTop = margins.top
-    val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-    updateLayoutParams<MarginLayoutParams> { updateMargins(top = initialMarginTop + statusBarInsets.top) }
-    return insets
-}
-
 fun View.addSystemBottomPadding(
     insets: WindowInsetsCompat,
     paddings: Rect,
-    margins: Rect,
 ): WindowInsetsCompat {
     val initialPaddingBottom = paddings.bottom
     val navigationBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
@@ -40,7 +27,6 @@ fun View.addSystemBottomPadding(
 
 fun View.addSystemBottomMargin(
     insets: WindowInsetsCompat,
-    paddings: Rect,
     margins: Rect,
 ): WindowInsetsCompat {
     val initialMarginBottom = margins.bottom
@@ -74,24 +60,35 @@ class InsetsBuilder(
     private val actions =
         mutableListOf<View.(WindowInsetsCompat, Rect, Rect) -> WindowInsetsCompat>()
 
-    fun addSystemTopPadding() {
-        actions.add(View::addSystemTopPadding)
+    fun addSystemTopPadding() : InsetsBuilder {
+        actions.add { insets, paddings, _ ->
+            addSystemTopPadding(insets, paddings)
+        }
+        return this
     }
 
-    fun addSystemBottomPadding() {
-        actions.add(View::addSystemBottomPadding)
+    fun addSystemBottomPadding(): InsetsBuilder {
+        actions.add { insets, paddings, _ ->
+            addSystemBottomPadding(insets, paddings)
+        }
+        return this
     }
 
-    fun addSystemTopMargin() {
-        actions.add(View::addSystemTopMargin)
+    fun addSystemBottomMargin(): InsetsBuilder {
+        actions.add { insets, _, margins->
+            addSystemBottomMargin(insets,margins)
+        }
+        return this
     }
 
-    fun addSystemBottomMargin() {
-        actions.add(View::addSystemBottomMargin)
-    }
-
-    fun fitIme() {
+    fun fitIme(): InsetsBuilder {
         actions.add(View::fitIme)
+        return this
+    }
+
+    fun add(action: View.(WindowInsetsCompat, Rect, Rect) -> WindowInsetsCompat): InsetsBuilder {
+        actions.add(action)
+        return this
     }
 
     fun build(initialInsets: WindowInsetsCompat): WindowInsetsCompat {
@@ -103,16 +100,14 @@ class InsetsBuilder(
     }
 }
 
-fun View.doOnApplyWindowInsets(block: InsetsBuilder.(WindowInsetsCompat) -> Unit) {
+fun View.doOnApplyWindowInsets(block: InsetsBuilder.() -> InsetsBuilder) {
     val paddings = Rect(paddingLeft, paddingTop, paddingRight, paddingBottom)
     val margins = Rect(marginLeft, marginTop, marginRight, marginBottom)
     val builder = InsetsBuilder(this, paddings, margins)
     ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-        builder.block(insets)
-        builder.build(insets)
+        builder.block().build(insets)
     }
-    //requestApplyInsetsWhenAttached()
-    ViewCompat.requestApplyInsets(this)
+    requestApplyInsetsWhenAttached()
 }
 
 private fun View.requestApplyInsetsWhenAttached() {
