@@ -1,14 +1,13 @@
 package com.kuymakov.chat.ui.search
 
-import android.os.Bundle
-import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.kuymakov.chat.R
+import com.kuymakov.chat.base.extensions.doOnApplyWindowInsets
 import com.kuymakov.chat.base.extensions.getQueryText
-import com.kuymakov.chat.base.extensions.hideKeyboard
 import com.kuymakov.chat.base.extensions.launchOnLifecycle
 import com.kuymakov.chat.base.extensions.showKeyboard
 import com.kuymakov.chat.base.mvi.BaseMviView
@@ -34,18 +33,22 @@ class SearchFragment :
     private val navController by lazy { findNavController() }
     private var adapter: UsersAdapter? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-    }
-
-
     override fun init() {
         bind(viewModel)
         viewModel.bind(this)
+        setupInsets()
         setupToolbar()
         setupSearch()
         setupList()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().window.apply {
+            WindowInsetsControllerCompat(this, binding.root).apply {
+                isAppearanceLightStatusBars = true
+            }
+        }
     }
 
     override fun render(state: SearchStore.State) {
@@ -81,6 +84,12 @@ class SearchFragment :
         adapter = null
     }
 
+    private fun setupInsets() {
+        binding.appbarLayout.doOnApplyWindowInsets {
+            addSystemTopPadding()
+        }
+    }
+
     private fun onClick(user: User) {
         dispatch(SearchStore.Action.UserItemClick(user.id))
     }
@@ -89,7 +98,6 @@ class SearchFragment :
         with(binding.toolbar) {
             showOverflowMenu()
             setNavigationOnClickListener {
-                hideKeyboard()
                 navController.popBackStack()
             }
         }
