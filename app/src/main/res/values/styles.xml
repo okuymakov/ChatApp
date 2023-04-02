@@ -12,6 +12,8 @@
     </style>
 
     <style name="ChatBottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:navigationBarColor">@color/white</item>
         <item name="bottomSheetStyle">@style/ChatBottomSheetStyle</item>
     </style>
 
