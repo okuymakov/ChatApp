@@ -1,26 +1,21 @@
 package com.kuymakov.chat.ui.camera
 
 import android.content.ContentValues
-import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
-import android.view.WindowManager
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.kuymakov.chat.R
 import com.kuymakov.chat.base.extensions.doOnApplyWindowInsets
+import com.kuymakov.chat.base.ui.FullscreenFragment
 import com.kuymakov.chat.base.ui.viewBinding
 import com.kuymakov.chat.databinding.FragmentCameraBinding
 import timber.log.Timber
@@ -28,15 +23,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-class CameraFragment : Fragment(R.layout.fragment_camera) {
+class CameraFragment : FullscreenFragment(R.layout.fragment_camera) {
     private val navController by lazy { findNavController() }
     private var imageCapture: ImageCapture? = null
+    private var cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
     private val binding by viewBinding(FragmentCameraBinding::bind)
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(requireActivity().window, false)
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -45,35 +36,8 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         binding.takePhotoButton.setOnClickListener {
             takePhoto()
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        requireActivity().window.apply {
-            WindowInsetsControllerCompat(this, binding.root).apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    isNavigationBarContrastEnforced = false
-                }
-                isAppearanceLightNavigationBars = false
-                hide(WindowInsetsCompat.Type.statusBars())
-                statusBarColor = Color.TRANSPARENT
-                navigationBarColor = Color.TRANSPARENT
-            }
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        requireActivity().window.apply {
-            WindowInsetsControllerCompat(this, binding.root).apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    isNavigationBarContrastEnforced = true
-                }
-                isAppearanceLightNavigationBars = true
-                show(WindowInsetsCompat.Type.statusBars())
-                statusBarColor = context.getColor(R.color.blue)
-                navigationBarColor = context.getColor(R.color.white_50)
-            }
+        binding.flipCameraButton.setOnClickListener {
+            flipCamera()
         }
     }
 
@@ -97,7 +61,6 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                 .also {
                     it.setSurfaceProvider(binding.cameraPreview.surfaceProvider)
                 }
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             try {
                 cameraProvider.unbindAll()
@@ -134,7 +97,6 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
             )
             .build()
 
-
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(requireContext()),
@@ -149,6 +111,15 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                     Timber.e(exception)
                 }
             })
+    }
+
+    private fun flipCamera() {
+        if (cameraSelector === CameraSelector.DEFAULT_FRONT_CAMERA){
+            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        } else if (cameraSelector === CameraSelector.DEFAULT_BACK_CAMERA) {
+            cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+        }
+        startCamera()
     }
 
     private fun navigateToPhotoResult(uri: Uri) {
